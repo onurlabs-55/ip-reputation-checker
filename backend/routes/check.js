@@ -9,6 +9,7 @@ const { getRiskLevel } = require('../utils/riskLevel');
 const { checkIpReputation } = require('../services/abuseIpDb');
 const { checkIpOtx } = require('../services/otx');
 const { checkIpVirusTotal } = require('../services/virustotal');
+const { insertScan } = require('../db/database');
 
 const router = express.Router();
 
@@ -94,15 +95,16 @@ router.post('/', async (req, res) => {
       virustotal = { available: false, error: 'Yapılandırılmadı' };
     }
 
-    return res.json({
-      success: true,
-      data: {
-        ...result,
-        riskLevel,
-        otx,
-        virustotal,
-      },
-    });
+    const responseData = { ...result, riskLevel, otx, virustotal };
+
+    // Başarılı sorguyu SQLite'a kaydet (hata olursa yanıtı etkilemez)
+    try {
+      insertScan(responseData);
+    } catch (dbErr) {
+      console.error('[DB] Kayıt hatası:', dbErr.message);
+    }
+
+    return res.json({ success: true, data: responseData });
   } catch (error) {
     // Bilinen hata kodlarına göre uygun HTTP durum kodu seç
     const statusByCode = {

@@ -141,18 +141,23 @@ Oluşturulan `.env` dosyasını bir metin editörüyle açıp değerleri dolduru
 ABUSEIPDB_API_KEY=your_abuseipdb_key
 OTX_API_KEY=your_otx_key
 VT_API_KEY=your_virustotal_key
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change_this_password
+SESSION_SECRET=change_this_secret_key
 PORT=3000
 ```
 
-**API anahtarları hakkında:**
+**Ortam değişkenleri hakkında:**
 
-
-| Değişken            | Durum       | Açıklama                                           |
-| ------------------- | ----------- | -------------------------------------------------- |
-| `ABUSEIPDB_API_KEY` | **Zorunlu** | Boş bırakılırsa IP sorgulaması çalışmaz            |
-| `OTX_API_KEY`       | Opsiyonel   | Boş bırakılabilir; OTX verileri gösterilmez        |
-| `VT_API_KEY`        | Opsiyonel   | Boş bırakılabilir; VirusTotal verileri gösterilmez |
-| `PORT`              | Opsiyonel   | Varsayılan: `3000`                                 |
+| Değişken            | Durum       | Açıklama                                                  |
+| ------------------- | ----------- | --------------------------------------------------------- |
+| `ABUSEIPDB_API_KEY` | **Zorunlu** | Boş bırakılırsa IP sorgulaması çalışmaz                   |
+| `OTX_API_KEY`       | Opsiyonel   | Boş bırakılabilir; OTX verileri gösterilmez               |
+| `VT_API_KEY`        | Opsiyonel   | Boş bırakılabilir; VirusTotal verileri gösterilmez        |
+| `ADMIN_USERNAME`    | **Zorunlu** | Admin paneli giriş kullanıcı adı                          |
+| `ADMIN_PASSWORD`    | **Zorunlu** | Admin paneli giriş şifresi; güçlü bir değer seçin        |
+| `SESSION_SECRET`    | **Zorunlu** | Express session imzalama anahtarı; rastgele, uzun bir değer seçin |
+| `PORT`              | Opsiyonel   | Varsayılan: `3000`                                        |
 
 
 > OTX veya VirusTotal anahtarı girilmezse uygulama çalışmaya devam eder; yalnızca ilgili sütunlar "Yapılandırılmadı" olarak görünür.
@@ -177,7 +182,8 @@ Backend başarıyla çalıştığında terminalde şu çıktıyı görürsünüz
 
 ```
 IP Reputation Checker çalışıyor: http://localhost:3000
-API endpoint: POST http://localhost:3000/check
+API endpoint:  POST http://localhost:3000/check
+Admin paneli:  http://localhost:3000/admin/login
 ```
 
 ---
@@ -197,6 +203,33 @@ Ayrı bir frontend sunucusu gerekmez. Uygulama kullanıma hazırdır.
 ---
 
 
+
+## Admin Paneli
+
+Her başarılı IP sorgusu SQLite veritabanına (`backend/data/scans.db`) otomatik olarak kaydedilir. Admin paneli bu kayıtları listeler.
+
+### Erişim
+
+```
+http://localhost:3000/admin/login
+```
+
+`.env` dosyasındaki `ADMIN_USERNAME` ve `ADMIN_PASSWORD` bilgileriyle giriş yapılır. Giriş yapılmadan `/admin` sayfasına erişim mümkün değildir.
+
+### Admin Panel Özellikleri
+
+- Son 200 tarama en yeniden eskiye sıralanarak listelenir
+- Tabloda: Tarih/Saat, IP Adresi, Risk Seviyesi, Abuse Score, Ülke, ISP, OTX Pulse Count, VT Malicious
+- `/admin/logout` ile oturumdan çıkılır
+
+### Veritabanı
+
+- Kullanılan kütüphane: **better-sqlite3**
+- DB dosyası: `backend/data/scans.db`
+- `backend/data/` klasörü ve `.env` dosyası `.gitignore` ile versiyon kontrolü dışında tutulur
+- Uygulama ilk başlatıldığında `data/` klasörü ve tablo otomatik oluşturulur
+
+---
 
 ## API Key Güvenliği
 
@@ -280,8 +313,11 @@ Veriler LocalStorage'dan hesaplanır; sayfa yenilendiğinde korunur.
 ip-reputation-checker/
 ├── backend/
 │   ├── server.js                  # Express sunucusu
+│   ├── db/
+│   │   └── database.js            # SQLite kurulumu ve yardımcı fonksiyonlar
 │   ├── routes/
-│   │   └── check.js               # POST /check endpoint
+│   │   ├── check.js               # POST /check endpoint
+│   │   └── admin.js               # Admin paneli ve login route'ları
 │   ├── services/
 │   │   ├── abuseIpDb.js           # AbuseIPDB entegrasyonu
 │   │   ├── otx.js                 # AlienVault OTX entegrasyonu
