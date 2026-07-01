@@ -199,7 +199,7 @@ function renderLoginPage(errorMsg = '') {
 /* ---- Admin panel HTML ---- */
 function renderAdminPage(scans) {
   const rows = scans.length === 0
-    ? `<tr><td colspan="8" class="empty">Henüz kayıtlı tarama yok.</td></tr>`
+    ? `<tr><td colspan="10" class="empty">Henüz kayıtlı tarama yok.</td></tr>`
     : scans.map(s => {
         const rc = riskClass(s.risk_level);
         return `<tr>
@@ -211,6 +211,8 @@ function renderAdminPage(scans) {
           <td class="truncate" title="${s.isp ?? ''}">${s.isp ?? '—'}</td>
           <td>${s.otx_pulse_count ?? '—'}</td>
           <td>${s.vt_malicious ?? '—'}</td>
+          <td class="mono">${s.visitor_ip ?? '—'}</td>
+          <td>${s.visitor_country ?? '—'}</td>
         </tr>`;
       }).join('\n');
 
@@ -297,6 +299,8 @@ function renderAdminPage(scans) {
             <th>ISP</th>
             <th>OTX Pulses</th>
             <th>VT Malicious</th>
+            <th>Visitor IP</th>
+            <th>Visitor Country</th>
           </tr>
         </thead>
         <tbody>

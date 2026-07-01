@@ -15,6 +15,7 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 
+const { rateLimit } = require('express-rate-limit');
 const checkRoute = require('./routes/check');
 const adminRoute = require('./routes/admin');
 
@@ -42,8 +43,26 @@ app.use(session({
   },
 }));
 
+// Rate limit: yalnızca POST /check için geçerli
+// Pencere ve limit .env üzerinden yapılandırılabilir
+const checkRateLimit = rateLimit({
+  windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW_MINUTES) || 1) * 60 * 1000,
+  max:      parseInt(process.env.RATE_LIMIT_MAX_REQUESTS)    || 20,
+  standardHeaders: true,  // RateLimit-* headerları ekler
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).json({
+      success: false,
+      error: {
+        code: 'RATE_LIMIT',
+        message: `Çok fazla istek gönderildi. Lütfen ${process.env.RATE_LIMIT_WINDOW_MINUTES || 1} dakika sonra tekrar deneyin.`,
+      },
+    });
+  },
+});
+
 // API endpoint'i
-app.use('/check', checkRoute);
+app.use('/check', checkRateLimit, checkRoute);
 
 // Admin panel route'ları
 app.use('/admin', adminRoute);

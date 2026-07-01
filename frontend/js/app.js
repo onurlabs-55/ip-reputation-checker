@@ -457,6 +457,11 @@
       return;
     }
 
+    if (ips.length > 10) {
+      showError(`Bir seferde en fazla 10 IP sorgulayabilirsiniz. ${ips.length} IP girildi.`);
+      return;
+    }
+
     setLoading(true);
 
     const batchResults = [];

@@ -45,40 +45,57 @@ db.exec(`
   )
 `);
 
+// Migration: visitor_ip ve visitor_country sütunları yoksa ekle.
+// ALTER TABLE IF NOT EXISTS sadece SQLite 3.37+ destekler;
+// sütun listesini kontrol ederek uyumlu şekilde yapıyoruz.
+const existingColumns = db.pragma('table_info(scans)').map(c => c.name);
+if (!existingColumns.includes('visitor_ip')) {
+  db.exec('ALTER TABLE scans ADD COLUMN visitor_ip TEXT');
+}
+if (!existingColumns.includes('visitor_country')) {
+  db.exec('ALTER TABLE scans ADD COLUMN visitor_country TEXT');
+}
+
 /**
  * Başarılı bir IP taramasını veritabanına kaydeder.
- * @param {object} data - /check endpoint'inden dönen data objesi
+ * @param {object} data        - /check endpoint'inden dönen data objesi
+ * @param {string} visitorIp      - İsteği gönderen ziyaretçinin IP adresi
+ * @param {string} visitorCountry - Ziyaretçinin ülke kodu (geoip-lite veya özel değer)
  */
-function insertScan(data) {
+function insertScan(data, visitorIp = null, visitorCountry = null) {
   const stmt = db.prepare(`
     INSERT INTO scans (
       ip_address, abuse_score, risk_level, country_code,
       isp, domain, total_reports, last_reported_at,
       otx_pulse_count, otx_reputation,
-      vt_malicious, vt_suspicious, vt_harmless, vt_undetected
+      vt_malicious, vt_suspicious, vt_harmless, vt_undetected,
+      visitor_ip, visitor_country
     ) VALUES (
       @ip_address, @abuse_score, @risk_level, @country_code,
       @isp, @domain, @total_reports, @last_reported_at,
       @otx_pulse_count, @otx_reputation,
-      @vt_malicious, @vt_suspicious, @vt_harmless, @vt_undetected
+      @vt_malicious, @vt_suspicious, @vt_harmless, @vt_undetected,
+      @visitor_ip, @visitor_country
     )
   `);
 
   stmt.run({
-    ip_address:      data.ipAddress ?? '',
-    abuse_score:     data.abuseConfidenceScore ?? 0,
-    risk_level:      data.riskLevel?.level ?? 'unknown',
-    country_code:    data.countryCode ?? null,
-    isp:             data.isp ?? null,
-    domain:          data.domain ?? null,
-    total_reports:   data.totalReports ?? 0,
+    ip_address:       data.ipAddress ?? '',
+    abuse_score:      data.abuseConfidenceScore ?? 0,
+    risk_level:       data.riskLevel?.level ?? 'unknown',
+    country_code:     data.countryCode ?? null,
+    isp:              data.isp ?? null,
+    domain:           data.domain ?? null,
+    total_reports:    data.totalReports ?? 0,
     last_reported_at: data.lastReportedAt ?? null,
-    otx_pulse_count: data.otx?.available ? (data.otx.pulseCount ?? 0) : null,
-    otx_reputation:  data.otx?.available ? (data.otx.reputation ?? 0) : null,
-    vt_malicious:    data.virustotal?.available ? (data.virustotal.malicious ?? 0) : null,
-    vt_suspicious:   data.virustotal?.available ? (data.virustotal.suspicious ?? 0) : null,
-    vt_harmless:     data.virustotal?.available ? (data.virustotal.harmless ?? 0) : null,
-    vt_undetected:   data.virustotal?.available ? (data.virustotal.undetected ?? 0) : null,
+    otx_pulse_count:  data.otx?.available ? (data.otx.pulseCount ?? 0) : null,
+    otx_reputation:   data.otx?.available ? (data.otx.reputation ?? 0) : null,
+    vt_malicious:     data.virustotal?.available ? (data.virustotal.malicious ?? 0) : null,
+    vt_suspicious:    data.virustotal?.available ? (data.virustotal.suspicious ?? 0) : null,
+    vt_harmless:      data.virustotal?.available ? (data.virustotal.harmless ?? 0) : null,
+    vt_undetected:    data.virustotal?.available ? (data.virustotal.undetected ?? 0) : null,
+    visitor_ip:       visitorIp,
+    visitor_country:  visitorCountry,
   });
 }
 
