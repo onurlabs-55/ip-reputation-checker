@@ -2,6 +2,19 @@
 
 IPv4 ve IPv6 adreslerinin itibar skorunu sorgulayan full stack web uygulaması. Tek veya çoklu IP adresi girilebilir; backend AbuseIPDB, AlienVault OTX ve VirusTotal API'lerine istek atar, sonuçlar modern bir arayüzde gösterilir.
 
+## Özellikler
+
+- ✅ AbuseIPDB Entegrasyonu
+- ✅ AlienVault OTX Entegrasyonu
+- ✅ VirusTotal Entegrasyonu
+- ✅ Çoklu IP Sorgulama
+- ✅ Dashboard
+- ✅ CSV Export
+- ✅ SQLite Veritabanı
+- ✅ Admin Paneli
+- ✅ Visitor Tracking
+- ✅ Rate Limiting
+- ✅ API Performance Logging
 
 ![Ana Sayfa](docs/images/home.png)
 
@@ -17,6 +30,12 @@ IPv4 ve IPv6 adreslerinin itibar skorunu sorgulayan full stack web uygulaması. 
 - Dashboard ile sorgu istatistiklerini özetler
 - Sorgu sonuçlarını CSV olarak indirmeyi destekler (tek veya çoklu IP)
 - Sonuç tablosunu "Tabloyu Temizle" butonu ile sıfırlamayı destekler
+- Başarılı IP sorgularını SQLite veritabanına otomatik kaydeder
+- Admin paneli üzerinden son sorguları görüntülemeyi sağlar
+- Ziyaretçinin IP adresi ve ülke bilgisini kaydeder
+- Aynı ziyaretçinin aşırı istek göndermesini önlemek için rate limiting uygular
+- Tek seferde en fazla 10 IP sorgulanmasına izin verir
+- API performansını ölçmek için isteğe bağlı performans logları sunar
 
 ---
 
@@ -157,6 +176,10 @@ PORT=3000
 | `ADMIN_USERNAME`    | **Zorunlu** | Admin paneli giriş kullanıcı adı                          |
 | `ADMIN_PASSWORD`    | **Zorunlu** | Admin paneli giriş şifresi; güçlü bir değer seçin        |
 | `SESSION_SECRET`    | **Zorunlu** | Express session imzalama anahtarı; rastgele, uzun bir değer seçin |
+| `PERF_LOGS`         | Opsiyonel   | `true` yapılırsa AbuseIPDB, OTX, VirusTotal ve toplam sorgu süreleri terminale yazdırılır |
+| `MAX_IPS_PER_REQUEST` | Opsiyonel | Tek istekte sorgulanabilecek maksimum IP sayısı            |
+| `RATE_LIMIT_WINDOW_MINUTES` | Opsiyonel | Rate limit zaman penceresi (dakika)                  |
+| `RATE_LIMIT_MAX_REQUESTS` | Opsiyonel | Belirtilen zaman penceresinde aynı ziyaretçinin gönderebileceği maksimum istek sayısı |
 | `PORT`              | Opsiyonel   | Varsayılan: `3000`                                        |
 
 
@@ -219,7 +242,7 @@ http://localhost:3000/admin/login
 ### Admin Panel Özellikleri
 
 - Son 200 tarama en yeniden eskiye sıralanarak listelenir
-- Tabloda: Tarih/Saat, IP Adresi, Risk Seviyesi, Abuse Score, Ülke, ISP, OTX Pulse Count, VT Malicious
+- Tabloda: Tarih/Saat, IP Adresi, Risk Seviyesi, Abuse Score, Ülke, ISP, OTX Pulse Count, VT Malicious, Visitor IP, Visitor Country
 - `/admin/logout` ile oturumdan çıkılır
 
 ### Veritabanı
@@ -302,6 +325,22 @@ Sayfanın üst kısmında istatistik kartları:
 - En son sorgulanan IP
 
 Veriler LocalStorage'dan hesaplanır; sayfa yenilendiğinde korunur.
+
+
+
+### Güvenlik
+
+- Express Rate Limit ile istek sınırlaması uygulanır
+- Aynı ziyaretçi belirlenen süre içerisinde sınırlı sayıda sorgu yapabilir
+- Çoklu IP sorgularında tek seferde en fazla 10 IP kabul edilir
+- API anahtarları yalnızca backend tarafında tutulur
+
+
+
+### Performans
+
+- AbuseIPDB, AlienVault OTX ve VirusTotal sorguları Promise.all ile paralel çalıştırılır
+- İsteğe bağlı performans logları sayesinde her API'nin yanıt süreleri terminal üzerinden görüntülenebilir
 
 ---
 
